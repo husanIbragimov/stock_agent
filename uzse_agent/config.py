@@ -1,4 +1,8 @@
-"""Konfiguratsiyani (.env va portfolio.yaml) yuklash."""
+"""Konfiguratsiyani yuklash: .env (token, chat, DB) va bir martalik YAML import uchun o'qish.
+
+Portfel endi SQLite'da (`repo.PortfolioRepo`). YAML faqat `python main.py import-yaml`
+orqali bir marta ko'chirish uchun o'qiladi.
+"""
 from __future__ import annotations
 
 import os
@@ -9,6 +13,7 @@ import yaml
 from dotenv import load_dotenv
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
+DEFAULT_PORTFOLIO_PATH = ROOT_DIR / "config" / "portfolio.yaml"
 
 
 @dataclass
@@ -41,45 +46,31 @@ class AppConfig:
     telegram_bot_token: str
     telegram_chat_id: str
     db_path: Path
-    holdings: list[Holding]
-    watchlist: list[Holding]
-    settings: Settings
     log_level: str = "INFO"
 
-    def all_tickers(self) -> list[Holding]:
-        return [*self.holdings, *self.watchlist]
 
-
-def load_config(portfolio_path: str | Path | None = None, env_path: str | Path | None = None) -> AppConfig:
+def load_config(env_path: str | Path | None = None) -> AppConfig:
     load_dotenv(env_path or ROOT_DIR / ".env")
-
-    portfolio_path = Path(portfolio_path or ROOT_DIR / "config" / "portfolio.yaml")
-    if not portfolio_path.exists():
-        raise FileNotFoundError(
-            f"Portfolio fayli topilmadi: {portfolio_path}\n"
-            "config/portfolio.example.yaml faylidan nusxa oling: "
-            "cp config/portfolio.example.yaml config/portfolio.yaml"
-        )
-
-    with open(portfolio_path, "r", encoding="utf-8") as f:
-        raw = yaml.safe_load(f) or {}
-
-    holdings = [Holding(**h) for h in raw.get("holdings", [])]
-    watchlist = [Holding(**w) for w in raw.get("watchlist", [])]
-    settings = Settings(**raw.get("settings", {}))
 
     db_path = Path(os.environ.get("DB_PATH", "./data/agent.db"))
     db_path.parent.mkdir(parents=True, exist_ok=True)
 
-    token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "")
-
     return AppConfig(
-        telegram_bot_token=token,
-        telegram_chat_id=chat_id,
+        telegram_bot_token=os.environ.get("TELEGRAM_BOT_TOKEN", ""),
+        telegram_chat_id=os.environ.get("TELEGRAM_CHAT_ID", ""),
         db_path=db_path,
-        holdings=holdings,
-        watchlist=watchlist,
-        settings=settings,
         log_level=os.environ.get("LOG_LEVEL", "INFO"),
     )
+
+
+def load_portfolio_yaml(path: str | Path) -> tuple[list[Holding], list[Holding], Settings]:
+    """Eski portfolio.yaml faylini o'qiydi: (holdings, watchlist, settings)."""
+    path = Path(path)
+    if not path.exists():
+        raise FileNotFoundError(f"Portfolio fayli topilmadi: {path}")
+    with open(path, "r", encoding="utf-8") as f:
+        raw = yaml.safe_load(f) or {}
+    holdings = [Holding(**h) for h in raw.get("holdings") or []]
+    watchlist = [Holding(**w) for w in raw.get("watchlist") or []]
+    settings = Settings(**(raw.get("settings") or {}))
+    return holdings, watchlist, settings
