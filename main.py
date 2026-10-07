@@ -2,7 +2,7 @@
 """UZSE Portfolio Agent — CLI kirish nuqtasi.
 
 Foydalanish:
-    python main.py daemon         # doimiy ishlaydi: narx, yangiliklar, kunlik hisobot
+    python main.py daemon         # Telegram bot + jadval (narx, yangiliklar, kunlik hisobot)
     python main.py check          # bir marta narxlarni tekshiradi va threshold-alert yuboradi
     python main.py news           # bir marta yangiliklarni yig'adi
     python main.py report         # kunlik hisobotni darhol Telegram'ga yuboradi
@@ -47,21 +47,10 @@ def cmd_test_telegram(config, storage, repo, notifier, args) -> None:
 
 
 def cmd_daemon(config, storage, repo, notifier, args) -> None:
-    from apscheduler.schedulers.blocking import BlockingScheduler
+    from uzse_agent.bot.app import run_bot
+    from uzse_agent.bot.common import BotDeps
 
-    scheduler = BlockingScheduler(timezone="Asia/Tashkent")
-    scheduler.add_job(lambda: run_price_check(repo, storage, notifier),
-                      "cron", day_of_week="mon-fri", hour="9-18", minute="*/30",
-                      id="price_check")
-    scheduler.add_job(lambda: run_news_scan(repo, storage),
-                      "cron", hour="*/2", id="news_scan")
-    scheduler.add_job(lambda: run_daily_report(repo, storage, notifier),
-                      "cron", day_of_week="mon-fri", hour=18, minute=30,
-                      id="daily_report")
-
-    logging.getLogger(__name__).info("Daemon ishga tushdi. To'xtatish uchun Ctrl+C.")
-    run_price_check(repo, storage, notifier)
-    scheduler.start()
+    run_bot(config, BotDeps(storage=storage, repo=repo, notifier=notifier))
 
 
 def cmd_import_yaml(config, storage, repo, notifier, args) -> None:
