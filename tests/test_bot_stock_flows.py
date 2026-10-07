@@ -5,6 +5,7 @@ from uzse_agent.bot import common as c
 from uzse_agent.bot import handlers_stock as hs
 from uzse_agent.portfolio import Transaction
 from uzse_agent.repo import Security
+from uzse_agent.scraper import PriceQuote
 from tests.test_bot_flows import Bot
 
 ISIN = "UZ7036271003"
@@ -25,10 +26,27 @@ def _tx_ids(repo):
     return [tx.id for tx in repo.transactions(ISIN)]
 
 
-def test_list_shows_owned_and_watch(bot):
+def test_list_sends_one_message_per_stock_with_live_price(bot, storage, monkeypatch):
+    requested = []
+
+    def fake_quotes(codes):
+        requested.extend(codes)
+        return {ISIN: PriceQuote("UZNGP", ISIN, "x", 5250.0, -129.0, -2.4, "2026-10-07")}  # OTHER: sayt javob bermadi
+
+    monkeypatch.setattr(hs, "get_quotes", fake_quotes)
     bot.text(hs.cmd_list, "/list")
-    text = bot.chat.last
-    assert "6 dona" in text and "Kuzatuv" in text and "BRB &amp; Co" in text
+    texts = [t for t, _ in bot.chat.sent]
+    assert requested == [ISIN, OTHER]
+    assert len(texts) == 4  # "olinmoqda", 2 ta aksiya, jami
+    assert "olinmoqda" in texts[0]
+    assert "5 250 UZS" in texts[1] and "-129" in texts[1] and "6 dona" in texts[1]
+    assert "BRB &amp; Co" in texts[2] and "Kuzatuvda" in texts[2] and "noma'lum" in texts[2]
+    assert "Jami" in texts[3]
+    assert storage.last_price(ISIN) == 5250.0  # jonli narx tarixga yozildi
+    owned_buttons = [b.callback_data for row in bot.chat.sent[1][1].inline_keyboard for b in row]
+    watch_buttons = [b.callback_data for row in bot.chat.sent[2][1].inline_keyboard for b in row]
+    assert owned_buttons == [f"tx:buy:{ISIN}", f"tx:sell:{ISIN}", f"stock:{ISIN}"]
+    assert watch_buttons == [f"tx:buy:{OTHER}", f"stock:{OTHER}"]
 
 
 def test_list_empty(repo, storage):

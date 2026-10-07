@@ -43,13 +43,55 @@ def test_position_text_watch_and_realized():
     assert "Kuzatuvda" in text and "+250 UZS" in text
 
 
-def test_portfolio_list():
-    other = Security("UZ701879K017", "BRBNP", "BRB")
-    text = fmt.portfolio_list([(SEC, Position(10, 6000.0, 0.0), LAST), (other, Position(0, None, 0.0), None)])
-    assert "Portfel" in text and "Kuzatuv" in text and "BRB" in text
-    assert "Jami" in text and "-10 000" in text
+QUOTE = PriceQuote("UZNGP", "UZ7036271003", "<O'zbekneftgaz>", 5250.0, -129.0, -2.4, "2026-10-07")
+
+
+def test_list_item_live_price():
+    text = fmt.list_item(SEC, Position(10, 6000.0, 0.0), QUOTE, LAST)
+    assert "5 250 UZS" in text and "-129" in text and "-2.40%" in text and "2026-10-07" in text
+    assert "10 dona" in text and "6 000" in text
+    assert "Qiymat: 52 500 UZS" in text and "-7 500 UZS" in text and "(-12.5%)" in text
+    assert "saqlangan" not in text
     assert no_raw_html_from_data(text)
-    assert "bo'sh" in fmt.portfolio_list([])
+
+
+def test_list_item_falls_back_to_stored_price():
+    text = fmt.list_item(SEC, Position(10, 6000.0, 0.0), None, LAST)
+    assert "5 000 UZS" in text and "saqlangan" in text and "2026-10-07 13:30" in text
+    assert "-10 000 UZS" in text
+
+
+def test_list_item_watch_without_any_price():
+    text = fmt.list_item(SEC, Position(0, None, 0.0), None, None)
+    assert "Kuzatuvda" in text and "noma'lum" in text
+
+
+def test_portfolio_total():
+    other = Security("UZ701879K017", "BRBNP", "BRB")
+    text = fmt.portfolio_total([
+        (SEC, Position(10, 6000.0, 0.0), 5250.0),
+        (other, Position(0, None, 0.0), 845.0),
+        (Security("UZ1", None, "X"), Position(5, 100.0, 0.0), None),
+    ])
+    assert "2 ta aksiya portfelda, 1 ta kuzatuvda" in text
+    assert "Qiymat: 52 500 UZS" in text and "-7 500 UZS" in text
+    assert "1 ta aksiya narxi noma'lum" in text
+
+
+def test_fee_buttons():
+    labels = [label for label, _ in fmt.fee_buttons(5, 30, 6730.0)]
+    assert labels == ["Har bir dona uchun: 30 × 5 = 150", "Jami: 5", "Summadan 5%: 10 095"]
+    datas = [data for _, data in fmt.fee_buttons(5, 30, 6730.0)]
+    assert datas == ["feemode:unit", "feemode:total", "feemode:pct"]
+    assert [d for _, d in fmt.fee_buttons(150, 30, 6730.0)] == ["feemode:unit", "feemode:total"]
+
+
+def test_fee_detail_and_summary():
+    assert fmt.fee_detail(5, "unit", 30, 6730.0) == "30 × 5"
+    assert fmt.fee_detail(5, "total", 30, 6730.0) is None
+    assert fmt.fee_detail(0.5, "pct", 30, 6730.0) == "0.5% × 201 900"
+    tx = Transaction(None, "buy", 30, 6730.0, 150.0, "2026-10-07")
+    assert "komissiya 150 (30 × 5)" in fmt.tx_summary(SEC, tx, Position(30, 6735.0, 0.0), fee_detail="30 × 5")
 
 
 def test_tx_line_and_card_escape_note():

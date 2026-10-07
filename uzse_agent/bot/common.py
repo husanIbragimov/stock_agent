@@ -16,8 +16,8 @@ END = ConversationHandler.END
 (
     ADD_CODE, ADD_CONFIRM, ADD_DROP, ADD_TRAIL, ADD_KEYWORDS, ADD_BUY_OFFER,
     TX_PICK, TX_QTY, TX_PRICE, TX_DATE, TX_FEE, TX_NOTE, TX_CONFIRM,
-    EDIT_VALUE, SETTINGS_VALUE,
-) = range(15)
+    EDIT_VALUE, SETTINGS_VALUE, TX_FEE_MODE,
+) = range(16)
 
 # Buyruq bo'lmagan oddiy matn
 TEXT = filters.TEXT & ~filters.COMMAND

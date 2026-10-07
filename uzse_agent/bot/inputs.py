@@ -76,3 +76,19 @@ def parse_note(text: str) -> str:
     if len(note) > NOTE_MAX:
         raise InputError(f"Izoh {NOTE_MAX} belgidan oshmasligi kerak.")
     return note
+
+
+def fee_total(value: float, mode: str, quantity: int, price: float) -> float:
+    """Kiritilgan komissiyadan jami summani hisoblaydi.
+
+    unit  — har bir dona uchun: value × miqdor
+    total — butun bitim uchun bir marta: value
+    pct   — bitim summasidan foiz: miqdor × narx × value / 100
+    """
+    if mode == "unit":
+        return value * quantity
+    if mode == "total":
+        return value
+    if mode == "pct":
+        return round(quantity * price * value / 100, 2)
+    raise ValueError(f"Noma'lum komissiya usuli: {mode!r}")

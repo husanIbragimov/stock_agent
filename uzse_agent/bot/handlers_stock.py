@@ -1,11 +1,14 @@
 """/list, /stock: portfel ko'rinishi, aksiya kartochkasi, tarix, o'chirish va tahrirlash."""
 from __future__ import annotations
 
+import asyncio
+
 from telegram import Update
 from telegram.ext import CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler
 
 from ..portfolio import NegativePositionError
-from ..textfmt import esc, split_message
+from ..scraper import get_quotes
+from ..textfmt import esc
 from . import format as fmt
 from .common import CANCEL_ROW, EDIT_VALUE, END, TEXT, ack, callback_arg, deps, keyboard, send
 from .inputs import InputError, parse_keywords, parse_pct
@@ -16,10 +19,30 @@ _ISIN = r"[0-9A-Z]+"
 
 
 async def cmd_list(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Har bir aksiya alohida xabar, narx shu zahoti UZSE'dan olinadi."""
     d = deps(context)
-    items = [(s, d.repo.position(s.isin), d.storage.last_quote(s.isin)) for s in d.repo.list_securities()]
-    for part in split_message(fmt.portfolio_list(items)):
-        await send(update, part)
+    securities = d.repo.list_securities()
+    if not securities:
+        await send(update, "Portfel bo'sh. /add bilan aksiya qo'shing.")
+        return
+    await send(update, "⏳ UZSE'dan joriy narxlar olinmoqda...")
+    quotes = await asyncio.to_thread(get_quotes, [s.isin for s in securities])
+
+    totals = []
+    for sec in securities:
+        quote = quotes.get(sec.isin)
+        if quote is not None:
+            # Jonli narx tarixga ham yoziladi — kartochka va hisobot ham yangilanadi
+            d.storage.record_price(sec.isin, quote.price, quote.change_pct)
+        pos = d.repo.position(sec.isin)
+        last = d.storage.last_quote(sec.isin)
+        buttons = [("🟢 Xarid", f"tx:buy:{sec.isin}")]
+        if pos.quantity:
+            buttons.append(("🔴 Sotuv", f"tx:sell:{sec.isin}"))
+        buttons.append(("📋 Kartochka", f"stock:{sec.isin}"))
+        await send(update, fmt.list_item(sec, pos, quote, last), reply_markup=keyboard(buttons))
+        totals.append((sec, pos, quote.price if quote else (last[0] if last else None)))
+    await send(update, fmt.portfolio_total(totals))
 
 
 async def cmd_stock(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -170,7 +193,7 @@ async def edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 
 HANDLERS = [
-    CommandHandler("list", cmd_list),
+    CommandHandler("list", cmd_list, block=False),  # tarmoqqa chiqadi — botni to'smaydi
     CommandHandler("stock", cmd_stock),
     CallbackQueryHandler(show_card, pattern=rf"^stock:{_ISIN}$"),
     CallbackQueryHandler(show_history, pattern=rf"^hist:{_ISIN}$"),

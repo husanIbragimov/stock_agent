@@ -4,6 +4,7 @@ import pytest
 
 from uzse_agent.bot.inputs import (
     InputError,
+    fee_total,
     parse_date,
     parse_fee,
     parse_keywords,
@@ -91,3 +92,11 @@ def test_parse_quantity_rejects_comma_decimals_and_garbage(text):
 @pytest.mark.parametrize("text, expected", [("1,000", 1000), ("12 345 678", 12345678), ("1 000", 1000)])
 def test_parse_quantity_accepts_thousands_grouping(text, expected):
     assert parse_quantity(text) == expected
+
+
+def test_fee_total_modes():
+    assert fee_total(5, "unit", 30, 6730.0) == 150
+    assert fee_total(5, "total", 30, 6730.0) == 5
+    assert fee_total(0.5, "pct", 30, 6730.0) == pytest.approx(1009.5)
+    with pytest.raises(ValueError):
+        fee_total(5, "nima", 30, 6730.0)

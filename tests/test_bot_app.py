@@ -48,7 +48,7 @@ def test_stock_commands_registered(db_path):
 def test_long_commands_do_not_block_other_updates(db_path):
     app = make(db_path)
     blocking = {cmd for h in app.handlers[0] if hasattr(h, "commands") and h.block is not False for cmd in h.commands}
-    assert not {"check", "news", "report", "price"} & blocking
+    assert not {"check", "news", "report", "price", "list"} & blocking
 
 
 def test_news_scan_does_not_collide_with_price_check(db_path):

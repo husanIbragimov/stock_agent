@@ -143,7 +143,8 @@ def test_sell_flow_limits_quantity_and_realizes(bot, repo, storage):
     assert "price:last" in bot.chat.buttons()
     assert bot.press(handlers_tx.tx_price, "price:last") == c.TX_DATE
     assert bot.text(handlers_tx.tx_date, "2026-10-05") == c.TX_FEE
-    assert bot.text(handlers_tx.tx_fee, "500") == c.TX_NOTE
+    assert bot.text(handlers_tx.tx_fee, "500") == c.TX_FEE_MODE
+    assert bot.press(handlers_tx.tx_fee_mode, "feemode:total") == c.TX_NOTE
     assert bot.press(handlers_tx.tx_note, "note:skip") == c.TX_CONFIRM
     assert "+9 500" in bot.chat.last  # 10 × (7000 − 6000) − 500
     assert bot.press(handlers_tx.tx_save, "tx:save") == c.END
@@ -185,3 +186,39 @@ def test_settings_rejects_huge_value(bot):
     bot.press(handlers_admin.settings_ask, "set:price_history_days")
     assert bot.text(handlers_admin.settings_value, "1000000") == c.SETTINGS_VALUE
     assert bot.text(handlers_admin.settings_value, "90") == c.END
+
+
+def test_fee_per_share_and_percent(bot, repo):
+    _seed_position(repo)
+    bot.press(handlers_tx.tx_direct, f"tx:buy:{ISIN}")
+    bot.text(handlers_tx.tx_quantity, "30")
+    bot.text(handlers_tx.tx_price, "6730")
+    bot.press(handlers_tx.tx_date, "date:today")
+    assert bot.text(handlers_tx.tx_fee, "150") == c.TX_FEE_MODE
+    assert bot.chat.buttons() == ["feemode:unit", "feemode:total", "cancel"]  # 150% bo'lmaydi
+    # boshqa raqam yozsa, variantlar qayta hisoblanadi
+    assert bot.text(handlers_tx.tx_fee, "5") == c.TX_FEE_MODE
+    assert "feemode:pct" in bot.chat.buttons()
+    assert bot.press(handlers_tx.tx_fee_mode, "feemode:unit") == c.TX_NOTE
+    assert bot.press(handlers_tx.tx_note, "note:skip") == c.TX_CONFIRM
+    assert "komissiya 150 (30 × 5)" in bot.chat.last
+    bot.press(handlers_tx.tx_save, "tx:save")
+    assert repo.transactions(ISIN)[-1].fee == 150
+
+    bot.press(handlers_tx.tx_direct, f"tx:buy:{ISIN}")
+    bot.text(handlers_tx.tx_quantity, "30")
+    bot.text(handlers_tx.tx_price, "6730")
+    bot.press(handlers_tx.tx_date, "date:today")
+    bot.text(handlers_tx.tx_fee, "0,5")
+    bot.press(handlers_tx.tx_fee_mode, "feemode:pct")
+    bot.press(handlers_tx.tx_note, "note:skip")
+    assert "komissiya 1 009.50 (0.5% × 201 900)" in bot.chat.last
+
+
+def test_fee_zero_typed_skips_mode(bot, repo):
+    _seed_position(repo)
+    bot.press(handlers_tx.tx_direct, f"tx:buy:{ISIN}")
+    bot.text(handlers_tx.tx_quantity, "1")
+    bot.text(handlers_tx.tx_price, "6730")
+    bot.press(handlers_tx.tx_date, "date:today")
+    assert bot.text(handlers_tx.tx_fee, "0") == c.TX_NOTE
