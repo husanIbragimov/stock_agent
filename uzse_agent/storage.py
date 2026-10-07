@@ -84,6 +84,15 @@ class Storage:
             ).fetchone()
         return row[0] if row else None
 
+    def last_quote(self, ticker: str) -> tuple[float, str] | None:
+        """Oxirgi saqlangan narx va u olingan vaqt (UTC ISO)."""
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT price, fetched_at FROM price_history WHERE ticker = ? ORDER BY fetched_at DESC LIMIT 1",
+                (ticker,),
+            ).fetchone()
+        return (row[0], row[1]) if row else None
+
     # ---- alertlar (spam bo'lmasligi uchun) ----
     def alerts_today_count(self, ticker: str) -> int:
         today = datetime.now(timezone.utc).date().isoformat()

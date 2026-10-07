@@ -75,3 +75,10 @@ def test_run_exclusive_skips_when_busy():
     finally:
         runner._RUN_LOCK.release()
     assert calls == [1]
+
+
+def test_storage_last_quote(storage):
+    assert storage.last_quote(ISIN) is None
+    storage.record_price(ISIN, 5000, None)
+    price, fetched_at = storage.last_quote(ISIN)
+    assert price == 5000 and fetched_at.endswith("+00:00")
