@@ -1,4 +1,5 @@
-# O'zingizning portfelingiz. Fayl nomini portfolio.yaml qilib nusxalab, o'zgartiring.
+# Bu fayl faqat `python main.py import-yaml` orqali bir martalik import uchun.
+# Portfel endi ma'lumotlar bazasida saqlanadi va Telegram bot (/add, /buy, /sell) orqali boshqariladi.
 #
 # ticker              — aksiyaning ISIN kodi (tavsiya etiladi, masalan UZ7036271003) yoki
 #                        birja tikeri (masalan UZNGP). Narx https://uzse.uz/isu_infos/STK?isu_cd=<ISIN>

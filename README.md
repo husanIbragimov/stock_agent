@@ -48,7 +48,6 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 cp .env.example .env
-cp config/portfolio.example.yaml config/portfolio.yaml
 ```
 
 ### Telegram bot sozlash
@@ -63,13 +62,25 @@ cp config/portfolio.example.yaml config/portfolio.yaml
 5. Tekshirish: `python main.py test-telegram` — botdan sinov xabari kelishi
    kerak.
 
-### Portfolio sozlash
+### Portfelni sozlash
 
-`config/portfolio.yaml` faylini o'zingizning aksiyalaringiz bilan to'ldiring
-(namuna va har bir maydon izohi `config/portfolio.example.yaml`da). `ticker`
-maydoniga aksiyaning ISIN kodini (masalan `UZ7036271003`) yoki birja tikerini
-(masalan `UZNGP`) yozing. ISIN'ni https://uzse.uz/isu_infos/STK sahifasidagi
-qidiruv orqali topasiz — u havolada `isu_cd=` dan keyin ko'rinadi.
+Portfel ma'lumotlar bazasida saqlanadi va Telegram bot orqali boshqariladi:
+
+1. `.env` da `TELEGRAM_BOT_TOKEN` va `TELEGRAM_CHAT_ID` ni to'ldiring.
+2. `python main.py daemon` ni ishga tushiring.
+3. Botga `/add` yozing va aksiyaning ISIN kodini (masalan `UZ7036271003`) yoki
+   tikerini (`UZNGP`) yuboring. Keyin `/buy` va `/sell` bilan har bir xarid va
+   sotuvni kiriting — miqdor va o'rtacha narx shulardan hisoblanadi.
+
+Barcha buyruqlar: botga `/help` yozing. Bot faqat `TELEGRAM_CHAT_ID` dagi
+chatdan kelgan xabarlarga javob beradi.
+
+Avval `config/portfolio.yaml` ishlatgan bo'lsangiz, uni bir marta ko'chiring:
+
+    python main.py import-yaml
+
+Har bir egalik qilingan aksiya uchun bugungi sana bilan bitta "boshlang'ich xarid"
+yoziladi. Shundan keyin YAML fayli ishlatilmaydi.
 
 ## Ishga tushirish
 
@@ -83,16 +94,23 @@ python main.py news
 # Darhol kunlik hisobot yuborish
 python main.py report
 
-# Doimiy ishlaydigan rejim (savdo kunlari 09:00-18:00 har 30 daqiqada
-# narx tekshiradi, har 2 soatda yangilik yig'adi, 18:30da hisobot yuboradi)
+# Telegram bot + avtomatik tekshiruvlar (savdo kunlari 09:00-18:30 har 30
+# daqiqada narx tekshiradi, har 2 soatda yangilik yig'adi, 18:30da hisobot yuboradi)
 python main.py daemon
+
+# config/portfolio.yaml ni DB'ga bir marta ko'chirish
+python main.py import-yaml
+
+# Testlar
+pip install -r requirements-dev.txt && pytest
 ```
 
 ### Productionda ishlatish
 
-`daemon` rejimini terminalda ochiq qoldirish shart emas — uni systemd
-service yoki `tmux`/`screen` ichida, yoxud oddiygina cron orqali ishlatish
-mumkin:
+`daemon` rejimini systemd service yoki `tmux`/`screen` ichida ishlating —
+bot buyruqlari faqat shu rejimda ishlaydi. Botsiz, faqat ogohlantirishlar
+kerak bo'lsa, `daemon` o'rniga cron ishlatish mumkin (ikkalasini birga
+ishlatmang — tekshiruvlar ikki marta bajariladi):
 
 ```cron
 # Ish kunlari 9:00-18:00 orasida har 30 daqiqada narx tekshiruvi
@@ -111,7 +129,12 @@ mumkin:
 uzse-agent/
   main.py                  # CLI kirish nuqtasi
   uzse_agent/
-    config.py              # .env va portfolio.yaml ni yuklash
+    config.py              # .env ni yuklash, portfolio.yaml'ni import uchun o'qish
+    portfolio.py           # tranzaksiyalardan pozitsiya (o'rtacha narx) hisobi
+    repo.py                # SQLite: aksiyalar, xarid/sotuv tarixi, sozlamalar
+    importer.py            # portfolio.yaml -> DB (bir martalik)
+    textfmt.py             # Telegram HTML escape va raqam formatlash
+    bot/                   # Telegram bot: /add, /buy, /sell, /list, /stock, /settings ...
     scraper.py              # uzse.uz'dan narx olish (HTML parsing)
     news.py                 # RSS yangiliklar + sentiment baholash
     analyzer.py              # narx trendi + sentiment -> signal
@@ -121,6 +144,7 @@ uzse-agent/
   config/portfolio.example.yaml
   .env.example
   requirements.txt
+  tests/                   # pytest testlari (tarmoqsiz)
 ```
 
 ## Keyingi qadamlar (ixtiyoriy kengaytirishlar)
@@ -130,6 +154,4 @@ uzse-agent/
 - `analyzer.py`ga texnik ko'rsatkichlar (SMA/EMA, RSI) qo'shish.
 - Bir nechta broker/ma'lumot manbasidan (masalan qo'lda kiritilgan narxlar
   yoki boshqa platforma) narxlarni o'zaro solishtirib xatolarni kamaytirish.
-- Telegram bot'ga `/portfolio`, `/report` kabi buyruqlar qo'shib, so'rov
-  bo'yicha hisobot olish (hozircha faqat bir tomonlama xabar yuboriladi).
 # stock_agent
