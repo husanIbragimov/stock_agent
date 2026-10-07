@@ -1,5 +1,3 @@
-import threading
-
 from uzse_agent import runner
 from uzse_agent.config import Holding, Settings
 from uzse_agent.portfolio import Transaction

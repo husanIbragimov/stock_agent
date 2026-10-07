@@ -37,3 +37,9 @@ def _entry_commands(app):
 
 def test_forms_registered(db_path):
     assert {"add", "buy", "sell"} <= _entry_commands(make(db_path))
+
+
+def test_stock_commands_registered(db_path):
+    app = make(db_path)
+    commands = {cmd for h in app.handlers[0] if hasattr(h, "commands") for cmd in h.commands}
+    assert {"list", "stock", "check", "report", "settings", "cancel"} <= commands

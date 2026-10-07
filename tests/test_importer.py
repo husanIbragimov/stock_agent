@@ -1,7 +1,6 @@
 import pytest
 
 from uzse_agent.importer import import_yaml
-from uzse_agent.portfolio import Transaction
 from uzse_agent.scraper import PriceQuote
 
 YAML = """
