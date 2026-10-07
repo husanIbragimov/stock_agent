@@ -1,0 +1,45 @@
+# O'zingizning portfelingiz. Fayl nomini portfolio.yaml qilib nusxalab, o'zgartiring.
+#
+# ticker              — aksiyaning ISIN kodi (tavsiya etiladi, masalan UZ7036271003) yoki
+#                        birja tikeri (masalan UZNGP). Narx https://uzse.uz/isu_infos/STK?isu_cd=<ISIN>
+#                        sahifasidan olinadi; tiker berilsa, u avval ISIN'ga aylantiriladi.
+# name                — kompaniya nomi, yangiliklarni filtrlashda qidiruv so'zi sifatida ham ishlatiladi
+# quantity             — sizdagi dona soni
+# buy_price            — bitta aksiyani qancha narxga (UZS) olganingiz
+# drop_alert_pct       — sotib olgan narxdan shuncha foizga tushsa, ogohlantirish keladi
+# trailing_drop_pct    — so'nggi N kunlik eng yuqori narxdan shuncha foizga tushsa ham ogohlantiradi
+#                        (faqat narx pasayishini emas, "cho'qqidan qaytishni" ham ushlab qolish uchun)
+# extra_keywords       — yangiliklarda shu kompaniyaga tegishli deb hisoblanadigan qo'shimcha so'zlar
+
+holdings:
+  - ticker: HMKB
+    name: "Hamkorbank"
+    quantity: 100
+    buy_price: 95.0
+    drop_alert_pct: 7
+    trailing_drop_pct: 10
+    extra_keywords: ["Hamkorbank", "Hamkor bank"]
+
+  - ticker: AGMKP
+    name: "Olmaliq KMK"
+    quantity: 50
+    buy_price: 3200.0
+    drop_alert_pct: 8
+    trailing_drop_pct: 12
+    extra_keywords: ["Olmaliq KMK", "Almalyk MMC", "Олмалиқ КМК"]
+
+# Agentni kuzatishini istagan, lekin hozircha portfelda yo'q "kuzatuv ro'yxati"
+# (bashorat/yangiliklar tahlili shular uchun ham ishlaydi, lekin threshold-alert yo'q)
+watchlist:
+  - ticker: KFSK
+    name: "Kafolat sug'urta kompaniyasi"
+    extra_keywords: ["Kafolat"]
+
+# Umumiy sozlamalar
+settings:
+  # bir kunda bitta aksiya bo'yicha nechta marta xabar yuborish mumkin (spam bo'lmasligi uchun)
+  max_alerts_per_ticker_per_day: 2
+  # narx tarixi shuncha kun saqlanadi va trend/momentum hisoblashda ishlatiladi
+  price_history_days: 60
+  # yangiliklarni shuncha soatlik oynada tekshiradi
+  news_lookback_hours: 48
