@@ -19,7 +19,7 @@ pip install -r requirements-dev.txt   # requirements.txt + pytest
 pytest                         # full suite, no network (get_quotes / requests.post are monkeypatched)
 pytest tests/test_repo.py::test_delete_security_removes_transactions   # single test
 
-python main.py daemon          # Telegram bot (long polling) + PTB JobQueue (Asia/Tashkent): check every 30 min Mon–Fri 9–18, news every 2h, report 18:30 Mon–Fri
+python main.py daemon          # Telegram bot (long polling) + PTB JobQueue (Asia/Tashkent): check every 30 min Mon–Fri 9–18, news every 2h at :15 (offset so it never contends with a price check for the shared run lock), report 18:30 Mon–Fri. `/check`, `/news`, `/report`, `/price` use `block=False` so a slow fetch never freezes the bot
 python main.py check           # fetch prices once, store them, send threshold alerts
 python main.py news            # collect matching RSS news once
 python main.py report          # build and send the daily report now
