@@ -5,6 +5,8 @@ import logging
 
 import requests
 
+from .textfmt import split_message
+
 logger = logging.getLogger(__name__)
 
 
@@ -24,7 +26,11 @@ class TelegramNotifier:
                 text,
             )
             return False
+        # Uzun matn (masalan, ko'p aksiyali hisobot) bir nechta xabar bo'lib ketadi
+        results = [self._send_one(part) for part in split_message(text)]
+        return all(results)
 
+    def _send_one(self, text: str) -> bool:
         url = f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
         try:
             resp = requests.post(
