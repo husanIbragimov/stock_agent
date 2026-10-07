@@ -287,3 +287,4 @@ server_credentials/
 /docker/.volumes/
 /config/portfolio.yaml
 /data/agent.db
+/docs/
