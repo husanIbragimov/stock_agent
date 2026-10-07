@@ -7,6 +7,7 @@ Foydalanish:
     python main.py news           # bir marta yangiliklarni yig'adi
     python main.py report         # kunlik hisobotni darhol Telegram'ga yuboradi
     python main.py test-telegram  # Telegram ulanishini tekshirish uchun sinov xabari yuboradi
+    python main.py import-yaml    # config/portfolio.yaml ni DB'ga bir marta ko'chiradi
 """
 from __future__ import annotations
 
@@ -14,7 +15,7 @@ import argparse
 import logging
 import sys
 
-from uzse_agent.config import load_config
+from uzse_agent.config import DEFAULT_PORTFOLIO_PATH, load_config
 from uzse_agent.notifier import TelegramNotifier
 from uzse_agent.repo import PortfolioRepo
 from uzse_agent.runner import run_daily_report, run_news_scan, run_price_check
@@ -63,18 +64,27 @@ def cmd_daemon(config, storage, repo, notifier, args) -> None:
     scheduler.start()
 
 
+def cmd_import_yaml(config, storage, repo, notifier, args) -> None:
+    from uzse_agent.importer import import_yaml
+
+    result = import_yaml(args.portfolio or DEFAULT_PORTFOLIO_PATH, repo)
+    print(result.summary())
+
+
 COMMANDS = {
     "check": cmd_check,
     "news": cmd_news,
     "report": cmd_report,
     "daemon": cmd_daemon,
     "test-telegram": cmd_test_telegram,
+    "import-yaml": cmd_import_yaml,
 }
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="UZSE Portfolio Agent")
     parser.add_argument("command", choices=COMMANDS.keys())
+    parser.add_argument("--portfolio", default=None, help="import-yaml uchun portfolio.yaml yo'li")
     parser.add_argument("--env", default=None, help=".env fayli yo'li")
     args = parser.parse_args()
 
