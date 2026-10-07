@@ -149,3 +149,10 @@ def test_set_setting_rejects_bad_value(repo, value):
 def test_set_setting_rejects_unknown_key(repo):
     with pytest.raises(KeyError):
         repo.set_setting("nima", 5)
+
+
+def test_set_setting_rejects_huge_value(repo):
+    # 10**12 kun timedelta'ni buzadi va har bir check/hisobot yiqiladi
+    with pytest.raises(ValueError):
+        repo.set_setting("price_history_days", 10**12)
+    repo.set_setting("price_history_days", 3650)

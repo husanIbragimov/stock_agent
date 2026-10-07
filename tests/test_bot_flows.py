@@ -177,3 +177,11 @@ def test_cancel_clears_form(bot):
     bot.text(handlers_add.add_start, "/add")
     assert bot.press(c.cancel, "cancel") == c.END
     assert bot.context.user_data == {} and "Bekor" in bot.chat.last
+
+
+def test_settings_rejects_huge_value(bot):
+    from uzse_agent.bot import handlers_admin
+
+    bot.press(handlers_admin.settings_ask, "set:price_history_days")
+    assert bot.text(handlers_admin.settings_value, "1000000") == c.SETTINGS_VALUE
+    assert bot.text(handlers_admin.settings_value, "90") == c.END

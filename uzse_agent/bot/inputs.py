@@ -11,6 +11,7 @@ from datetime import date
 from ..scraper import _to_float
 
 NOTE_MAX = 200
+INT_MAX = 10**9
 
 
 class InputError(ValueError):
@@ -18,10 +19,14 @@ class InputError(ValueError):
 
 
 def parse_positive_int(text: str) -> int:
-    cleaned = re.sub(r"[\s,]", "", text)
-    if not re.fullmatch(r"[0-9]+", cleaned) or int(cleaned) <= 0:
+    text = re.sub(r"\s", " ", text.strip())
+    # "1000", "1 000", "1,000" — ha; "2,5" (o'nlik kasr) yoki "1 2 3" — yo'q
+    if not re.fullmatch(r"[0-9]+|[0-9]{1,3}([ ,][0-9]{3})+", text):
         raise InputError("Butun musbat son yuboring (masalan 30).")
-    return int(cleaned)
+    value = int(re.sub(r"[ ,]", "", text))
+    if not 0 < value <= INT_MAX:
+        raise InputError("Butun musbat son yuboring (masalan 30).")
+    return value
 
 
 def parse_quantity(text: str) -> int:

@@ -104,7 +104,8 @@ def _schedule_jobs(app: Application) -> None:
     jq = app.job_queue
     jq.run_custom(_job_price_check, name="price_check",
                   job_kwargs={**cron, "day_of_week": "mon-fri", "hour": "9-18", "minute": "*/30"})
-    jq.run_custom(_job_news_scan, name="news_scan", job_kwargs={**cron, "hour": "*/2", "minute": 0})
+    # :15 da — :00/:30 dagi narx tekshiruvi bilan qulf uchun to'qnashmasligi uchun
+    jq.run_custom(_job_news_scan, name="news_scan", job_kwargs={**cron, "hour": "*/2", "minute": 15})
     jq.run_custom(_job_daily_report, name="daily_report",
                   job_kwargs={**cron, "day_of_week": "mon-fri", "hour": 18, "minute": 30})
     # Ishga tushganda bir marta tekshirib qo'yamiz

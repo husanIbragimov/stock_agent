@@ -48,6 +48,8 @@ CREATE TABLE IF NOT EXISTS settings (
 
 EDITABLE_FIELDS = {"extra_keywords", "drop_alert_pct", "trailing_drop_pct"}
 SETTING_KEYS = {f.name for f in fields(Settings)}
+# Juda katta qiymat timedelta'ni buzadi (har bir check/hisobot yiqiladi)
+SETTING_MAX = 10000
 
 _SECURITY_COLS = "isin, ticker, name, extra_keywords, drop_alert_pct, trailing_drop_pct"
 _TX_COLS = "id, side, quantity, price, fee, traded_at, note"
@@ -232,8 +234,8 @@ class PortfolioRepo:
     def set_setting(self, key: str, value: int) -> None:
         if key not in SETTING_KEYS:
             raise KeyError(key)
-        if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
-            raise ValueError("Sozlama qiymati musbat butun son bo'lishi kerak")
+        if isinstance(value, bool) or not isinstance(value, int) or not 0 < value <= SETTING_MAX:
+            raise ValueError(f"Sozlama qiymati 1 dan {SETTING_MAX} gacha butun son bo'lishi kerak")
         with self._conn() as conn:
             conn.execute(
                 "INSERT INTO settings (key, value) VALUES (?, ?) "

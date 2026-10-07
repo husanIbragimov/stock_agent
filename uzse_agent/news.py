@@ -14,8 +14,12 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
 import feedparser
+import requests
 
 logger = logging.getLogger(__name__)
+
+# Javob bermay qolgan RSS server skanerni (va narx tekshiruvini) to'xtatib qo'ymasligi uchun
+RSS_TIMEOUT_SEC = 15
 
 # O'zbekiston iqtisodiyot/moliya yangiliklari bo'yicha ma'lum RSS manbalar.
 # Kerak bo'lsa bu ro'yxatga o'zingiz manba qo'shishingiz mumkin.
@@ -79,7 +83,9 @@ def fetch_news_for_keywords(keywords: list[str], lookback_hours: int = 48) -> li
 
     for feed_url in RSS_FEEDS:
         try:
-            parsed = feedparser.parse(feed_url)
+            resp = requests.get(feed_url, timeout=RSS_TIMEOUT_SEC)
+            resp.raise_for_status()
+            parsed = feedparser.parse(resp.content)
         except Exception as exc:  # noqa: BLE001
             logger.warning("RSS o'qib bo'lmadi %s: %s", feed_url, exc)
             continue

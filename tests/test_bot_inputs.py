@@ -79,3 +79,15 @@ def test_parse_keywords_and_note():
     assert parse_note("  salom ") == "salom"
     with pytest.raises(InputError):
         parse_note("x" * 201)
+
+
+@pytest.mark.parametrize("text", ["2,5", "1,5", "5 250,50", "1 2 3", "12,34", "9" * 30])
+def test_parse_quantity_rejects_comma_decimals_and_garbage(text):
+    # "2,5" — o'nlik kasr, 25 dona emas
+    with pytest.raises(InputError):
+        parse_quantity(text)
+
+
+@pytest.mark.parametrize("text, expected", [("1,000", 1000), ("12 345 678", 12345678), ("1 000", 1000)])
+def test_parse_quantity_accepts_thousands_grouping(text, expected):
+    assert parse_quantity(text) == expected

@@ -86,7 +86,12 @@ async def settings_value(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await send(update, str(exc))
         return SETTINGS_VALUE
     repo = deps(context).repo
-    repo.set_setting(context.user_data.pop("setting_key"), value)
+    try:
+        repo.set_setting(context.user_data["setting_key"], value)
+    except ValueError as exc:
+        await send(update, str(exc))
+        return SETTINGS_VALUE
+    context.user_data.pop("setting_key")
     await send(update, "✅ Saqlandi.\n\n" + fmt.settings_text(repo.load_settings()), reply_markup=_settings_keyboard())
     return END
 
@@ -95,10 +100,11 @@ _SETTING_PATTERN = rf"^set:({'|'.join(fmt.SETTING_LABELS)})$"
 
 HANDLERS = [
     CommandHandler(["start", "help"], cmd_help),
-    CommandHandler("check", cmd_check),
-    CommandHandler("news", cmd_news),
-    CommandHandler("report", cmd_report),
-    CommandHandler("price", cmd_price),
+    # Tarmoqqa chiqadigan buyruqlar fonda ishlaydi — bot bu vaqtda boshqa xabarlarga javob beradi
+    CommandHandler("check", cmd_check, block=False),
+    CommandHandler("news", cmd_news, block=False),
+    CommandHandler("report", cmd_report, block=False),
+    CommandHandler("price", cmd_price, block=False),
     CommandHandler("settings", cmd_settings),
 ]
 ENTRY_POINTS = [CallbackQueryHandler(settings_ask, pattern=_SETTING_PATTERN)]

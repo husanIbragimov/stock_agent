@@ -1,3 +1,6 @@
+import html
+import re
+
 from uzse_agent.bot import format as fmt
 from uzse_agent.config import Settings
 from uzse_agent.portfolio import Position, Transaction
@@ -69,3 +72,13 @@ def test_tx_summary():
 def test_settings_text():
     text = fmt.settings_text(Settings(price_history_days=90))
     assert "90" in text and set(fmt.SETTING_LABELS) == {"max_alerts_per_ticker_per_day", "price_history_days", "news_lookback_hours"}
+
+
+def test_history_fits_one_telegram_message():
+    # 20 ta tranzaksiya, har birida 200 belgilik izoh — xabar 4096 dan oshmasligi kerak
+    txs = [Transaction(i, "buy", 1000, 5249.99, 1500.0, "2026-10-07", "<" * 200) for i in range(1, 21)]
+    text = fmt.history_text(SEC, txs)
+    # Telegram chegarasi entity'lar ochilgandan keyingi (ko'rinadigan) matnga qo'llanadi
+    rendered = html.unescape(re.sub(r"</?(b|i|code)>", "", text))
+    assert len(rendered) < 4096
+    assert "<" * 40 + "…" in rendered

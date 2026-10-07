@@ -26,6 +26,9 @@ HELP_TEXT = (
     "/cancel — joriy formani bekor qilish"
 )
 
+# Tarixda izohlar qisqartiriladi: 20 ta qator bitta xabarga (4096) sig'ishi uchun
+HISTORY_NOTE_MAX = 40
+
 SETTING_LABELS = {
     "max_alerts_per_ticker_per_day": "Bir aksiya bo'yicha kunlik ogohlantirishlar",
     "price_history_days": "Narx tarixi (kun)",
@@ -108,14 +111,15 @@ def portfolio_list(items: list[tuple[Security, Position, tuple[float, str] | Non
     return "\n".join(parts)
 
 
-def tx_line(tx: Transaction) -> str:
+def tx_line(tx: Transaction, note_max: int | None = None) -> str:
     prefix = f"#{tx.id} " if tx.id is not None else ""
     side = "🟢 Xarid" if tx.side == "buy" else "🔴 Sotuv"
     line = f"{prefix}{tx.traded_at} {side}: {fmt_qty(tx.quantity)} × {fmt_money(tx.price)} UZS"
     if tx.fee:
         line += f", komissiya {fmt_money(tx.fee)}"
     if tx.note:
-        line += f" — {esc(tx.note)}"
+        note = tx.note if note_max is None or len(tx.note) <= note_max else tx.note[:note_max] + "…"
+        line += f" — {esc(note)}"
     return line
 
 
@@ -141,7 +145,7 @@ def stock_card(sec: Security, pos: Position, last: tuple[float, str] | None, rec
 
 def history_text(sec: Security, txs: list[Transaction]) -> str:
     return "\n".join(
-        [security_title(sec), "", "<b>Tranzaksiyalar</b> (o'chirish uchun raqamni bosing):", *map(tx_line, txs)]
+        [security_title(sec), "", "<b>Tranzaksiyalar</b> (o'chirish uchun raqamni bosing):", *(tx_line(t, note_max=HISTORY_NOTE_MAX) for t in txs)]
     )
 
 

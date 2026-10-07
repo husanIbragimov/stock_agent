@@ -43,3 +43,15 @@ def test_stock_commands_registered(db_path):
     app = make(db_path)
     commands = {cmd for h in app.handlers[0] if hasattr(h, "commands") for cmd in h.commands}
     assert {"list", "stock", "check", "report", "settings", "cancel"} <= commands
+
+
+def test_long_commands_do_not_block_other_updates(db_path):
+    app = make(db_path)
+    blocking = {cmd for h in app.handlers[0] if hasattr(h, "commands") and h.block is not False for cmd in h.commands}
+    assert not {"check", "news", "report", "price"} & blocking
+
+
+def test_news_scan_does_not_collide_with_price_check(db_path):
+    app = make(db_path)
+    jobs = {job.name: job.job.trigger for job in app.job_queue.jobs()}
+    assert "minute='15'" in str(jobs["news_scan"])
