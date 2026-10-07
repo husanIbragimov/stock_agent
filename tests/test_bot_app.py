@@ -28,3 +28,12 @@ def test_build_application_registers_handlers_and_jobs(db_path):
 def test_build_application_requires_config(db_path, token, chat_id):
     with pytest.raises(RuntimeError):
         make(db_path, token, chat_id)
+
+
+def _entry_commands(app):
+    conv = next(h for h in app.handlers[0] if isinstance(h, ConversationHandler))
+    return {cmd for h in conv.entry_points if hasattr(h, "commands") for cmd in h.commands}
+
+
+def test_forms_registered(db_path):
+    assert {"add", "buy", "sell"} <= _entry_commands(make(db_path))

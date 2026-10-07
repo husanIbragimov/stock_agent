@@ -26,7 +26,7 @@ from telegram.warnings import PTBUserWarning
 from ..config import AppConfig
 from ..portfolio import TZ
 from ..runner import run_daily_report, run_exclusive, run_news_scan, run_price_check
-from . import handlers_admin
+from . import handlers_add, handlers_admin, handlers_tx
 from .common import BotDeps, cancel, deps
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 warnings.filterwarnings("ignore", message=r".*per_message.*", category=PTBUserWarning)
 
 # Har biri HANDLERS, ENTRY_POINTS, STATES ga ega; Task 9/10 yangi modullarni qo'shadi
-FORM_MODULES = [handlers_admin]
+FORM_MODULES = [handlers_admin, handlers_add, handlers_tx]
 
 BOT_COMMANDS = [
     BotCommand("list", "Portfel"),
